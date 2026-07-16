@@ -27,7 +27,7 @@ prompt = PromptTemplate(
 )
 
 # Função principal de acionagem da API
-def gerar_resposta(pergunta_aluno: str, db: Session):
+def gerar_resposta(pergunta_estudante: str, db: Session):
     # Consulta o banco de dados (pega todas as regras da base_conhecimento)
     regras_db = db.query(models.BaseConhecimento).all()
     
@@ -38,8 +38,7 @@ def gerar_resposta(pergunta_aluno: str, db: Session):
     
     contexto_agrupado = "\n".join(textos)
     
-    # Preenche com as regras do banco e a pergunta do aluno
-    texto_pronto_para_ia = prompt.format(contexto=contexto_agrupado, pergunta=pergunta_aluno)
+    texto_para_ia = prompt.format(contexto=contexto_agrupado, pergunta=pergunta_estudante)
     
-    resposta_ia = llm.invoke(texto_pronto_para_ia)
+    resposta_ia = llm.invoke(texto_para_ia)
     return resposta_ia

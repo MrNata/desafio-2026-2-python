@@ -19,7 +19,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def verificar_senha(senha_pura, senha_hash):
     return pwd_context.verify(senha_pura, senha_hash)
 
-# 3. Função para transformar a senha pura em Hash antes de salvar no banco
+# 3. Função para transformar a senha Hash antes de salvar no banco
 def gerar_hash_senha(senha):
     return pwd_context.hash(senha)
 
@@ -27,7 +27,7 @@ def gerar_hash_senha(senha):
 def criar_token_acesso(dados: dict):
     dados_para_codificar = dados.copy()
     
-    # Calcula a hora que o token vai vencer
+    # Calcula a hora que o token vence
     expiracao = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     dados_para_codificar.update({"exp": expiracao})
     
@@ -40,7 +40,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 # 5. Função para validar o token
 def obter_usuario_atual(token: str = Depends(oauth2_scheme)):
     try:
-        # Tenta decodificar o token usando a nossa Chave Mestre
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:

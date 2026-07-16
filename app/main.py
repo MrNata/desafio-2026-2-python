@@ -126,7 +126,7 @@ async def consultar_historico(
     - limit: Quantos registros trazer (LIMIT)
     """
     
-    # Mais recentes primeiro)
+    # Mais recentes primeiro
     registros = (
         db.query(models.HistoricoLog)
         .order_by(models.HistoricoLog.data.desc())
