@@ -1,121 +1,99 @@
-# desafio-2026-2-python
+# API Assistente Acadêmico - Desafio Unoesc
 
-CORRESPONDENTE AO EDITAL N. 21/UNOESC-R/2025
+Esta é uma API desenvolvida em Python (FastAPI) para atuar como assistente virtual acadêmico. O sistema utiliza a arquitetura RAG (Retrieval-Augmented Generation) com o modelo de linguagem Phi-3 executado localmente via Ollama, garantindo a segurança e privacidade dos dados institucionais.
 
-Desafio Programador I Unoesc
+## Requisitos Atendidos
 
-Este é o nosso desafio para a vaga de programador na Unoesc. Serão testadas as habilidades e qualidade de código ao transformar requisitos limitados em uma aplicação web.
+* **RF01:** Endpoint `POST /perguntar` recebendo JSON com `codigoAluno` e `pergunta`.
+* **RF02 & RF03:** Respostas geradas estritamente com base nos dados cadastrados no banco de dados. A IA foi instruída a recusar perguntas fora do escopo acadêmico fornecido.
+* **RF05:** Registro de log de todas as interações na tabela `historico`, incluindo o tempo de processamento da IA.
+* **RF07:** Proteção de todos os endpoints de consulta via autenticação JWT (JSON Web Token). Armazenamento de senhas utilizando hash seguro (Bcrypt).
+* **Diferencial:** Processamento de IA 100% local (offline), eliminando custos e dependência de APIs externas de terceiros.
 
-**FAÇA O FORK DESTE REPOSITÓRIO E IMPLEMENTE O DESAFIO. O MANTENHA PÚBLICO, POIS QUEREMOS ACOMPANHAR SEUS COMMITS**
+## Tecnologias Utilizadas
 
-_Ao concluir o desafio, lembre de enviar um email para **recrutamentorh.jba@unoesc.edu.br, ti.coord@unoesc.edu.br e ti.dev@unoesc.edu.br**, com seu repositório. Lembre de incluir a documentação para que possamos rodar sua aplicação._
+* **Framework:** FastAPI / Uvicorn
+* **Banco de Dados:** MySQL 8.0
+* **ORM:** SQLAlchemy
+* **Segurança:** PyJWT, Passlib (Bcrypt)
+* **Inteligência Artificial:** LangChain, Ollama (Modelo Phi-3)
 
-## PONTOS OBRIGATÓRIOS
-* Python
-* FastAPI
-* REST
-* Mysql/Postgres
-* Git
-* LangChain
-* Documentação
+---
 
-## PONTOS DESEJÁVEIS
-* Docker
-* React
-* LLM
-* Ollama
-* OpenAPI
+## Configuração do Ambiente
 
-## PONTOS DIFERENCIAIS
-* Criar uma interface simples em Streamlit
-* Emissão de relatórios de uso
-* RAG e Embedding
+### 1. Banco de Dados (MySQL)
+Para seguir as boas práticas de privilégio mínimo, a API utiliza um usuário dedicado em vez do root. 
 
-## AVALIAÇÃO
-O código será avaliado de acordo com os seguinte critérios:
+Acesse o seu gerenciador do MySQL e execute o script abaixo:
 
-* Documentação do processo necessário para rodar a aplicação;
-* **Estrutura do projeto;**
-* **Histórico do GIT;**
-* Build e execução da aplicação;
-* Completude das funcionalidades;
-* Qualidade de código (design pattern, manutenibilidade, clareza);
-* Boas práticas de UI;
-* **Sentido e coerência nas respostas aos questionamentos na entrevista de apresentação do desafio realizada pelo candidato.**
- 
-**OBS: Plágios tendem a ser desclassificados. Atenção com o uso excessivo de IA.**
+```sql
+-- Criação do banco de dados
+CREATE DATABASE unoesc_db;
 
-**IMPORTANTE: Estamos buscando desenvolvedores que topam desafios, então mesmo não cumprindo todo os requisitos abaixo, seu esforço será avaliado.**
+-- Criação do usuário dedicado e permissões
+CREATE USER 'unoesc_app'@'localhost' IDENTIFIED BY 'Unoesc@2026';
+GRANT ALL PRIVILEGES ON unoesc_db.* TO 'unoesc_app'@'localhost';
+FLUSH PRIVILEGES;
+```
 
-## DESAFIO 
+*(Obs: As tabelas `base_conhecimento`, `historico` e `usuarios` serão criadas automaticamente pelo SQLAlchemy na primeira execução da API).*
 
-**Contexto**
+Após a API iniciar e gerar as tabelas, execute os inserts abaixo para alimentar a base de conhecimento com as regras acadêmicas:
 
-Uma instituição de ensino deseja um assistente para responder dúvidas acadêmicas para os seus estudantes.
-Para isso foi solicitado o desenvolvimento de uma API que comunique com o assistente, que por sua vez deverá basear suas respostas em conteúdos pré-definidos.
-Cada mensagem recebida na API deverá consultar uma "base de conhecimento" alimentada previamente, sendo registros em tabela ou embeddings de documentos.
-Em caso de questionamentos sobre assuntos que não sejam contemplados na "base de conhecimento", o assistente deve negar-se a responder.
-Por questões de segurança e conformidade, todas as conversas devem ser registrada em tabelas de logs. Esses logs devem ser utilizados para que sejam criados paineis de acompanhamento.
+```sql
+USE unoesc_db;
 
-**Requisitos Funcionais**
+INSERT INTO base_conhecimento (titulo, conteudo, categoria) VALUES 
+('Como fazer a rematrícula', 'A rematrícula deve ser realizada pelo Espaço Acadêmico, acessando a opção Matrícula/Rematrícula. Antes de iniciar o processo, verifique se o período de rematrícula está aberto, pois essa opção fica disponível apenas durante as datas estabelecidas pela instituição.', 'SAE'),
+('Como retirar atesdado de regularidade e frequência', 'Para solicitar um atestado, acesse o Espaço Acadêmico e, no menu Serviços on-line, selecione o curso desejado. Em seguida, clique em Nova solicitação, escolha o tipo de atestado que deseja emitir e siga as instruções exibidas na tela.', 'SAE'),
+('Onde atualizar meus dados pessoais', 'Para atualizar seus dados cadastrais, acesse seu nome no canto superior direito da tela e clique sobre ele. Em seguida, selecione a opção "Dados pessoais". Nessa área, você poderá visualizar e atualizar as informações do seu cadastro.', 'SAE');
+```
 
-_RF01 – API Perguntar_ 
+### 2. Configuração do Ollama
+1. Baixe e instale o Ollama através do site oficial: [ollama.com](https://ollama.com).
+2. No terminal do sistema operacional, faça o download do modelo Phi-3:
+   ```bash
+   ollama run phi3
+   ```
+3. O serviço do Ollama deve permanecer rodando em segundo plano (porta padrão `11434`).
 
-Endpoint /perguntar
-Deve receber um body semelhante a:
+### 3. Instalação das Dependências do Python
+Com o seu ambiente virtual (`.venv`) ativo no terminal, execute o comando de instalação:
+
+```bash
+pip install fastapi uvicorn sqlalchemy pymysql passlib bcrypt==4.0.1 PyJWT python-multipart langchain langchain-community langchain-core
+```
+
+---
+
+## Como Executar a API
+
+Na raiz do projeto (`projeto-unoesc`), inicie o servidor:
+
+```bash
+uvicorn
+```
+
+A API estará ativa em `http://127.0.0.1:8000`.
+
+---
+
+## Fluxo de Testes (Swagger)
+
+Acesse a documentação interativa da API em: **`http://127.0.0.1:8000/docs`**
+
+1. **Criar Usuário:** Acesse a rota `POST /registrar` e crie as credenciais que deseja utilizar para os testes.
+2. **Autenticação (Login):** Clique no botão **Authorize** (ícone de cadeado no topo direito da tela), preencha o formulário com o usuário e senha criados. O Swagger irá gerenciar e injetar o token JWT gerado nas próximas requisições de forma automática.
+3. **Enviar Pergunta:** Com o acesso autorizado, envie uma requisição para a rota protegida `POST /perguntar` utilizando o formato JSON abaixo:
+
+```json
 {
-   "codigoAluno":123
-   "pergunta":"Como faço uma matrícula?"
+  "codigoAluno": 1,
+  "pergunta": "Como realizar a rematrícula?"
 }
+```
 
-_RF02 – Base de Conhecimento_
+4. **Verificação de Performance e Logs:** A resposta será entregue contendo a informação extraída da base e o tempo de execução em segundos. O registro completo dessa transação será salvo na tabela `historico` do banco de dados.
 
-**Banco de dados - Utilizar uma tabela no banco contendo:**
-* id
-* titulo
-* conteudo
-* categoria
-
-**Embedding - Realizar o armazenamento de documentos para servir como base de conhecimento (OPCIONAL)**
-
-_RF03 – Busca_
-
-Antes da IA responder, localizar os registros ou documentos (se usando embedding) mais relevantes.
-A busca pode se balizar por LIKE, Full Text ou Embeddings (opcional).
-
-_RF04 – Geração da resposta_
-
-Utilizar LLMs. Caso possua chave de alguma API, pode utilizar, senão podes fazer uso de algum modelo disponível para Ollama local (especificar no projeto).
-
-_RF05 – Histórico_
-
-Para cada mensagem recebida e respondida, registrar:
-
-* codigoAluno
-* pergunta
-* resposta
-* data
-* tempoProcessamento
-
-_RF06 – API Estatísticas_
-
-Endpoint /estatisticas que possibilite retornar:
-
-* Perguntas realizadas no dia
-* Perguntas por "codigoAluno"
-* Perguntas sem resposta/erro no dia
-* Tempo médio de resposta de todas as repostas armazenadas
-
-_RF07 - Segurança_
-
-Todos os endpoints existentes devem exigir a passagem de um Token JWT para seu funcionamento, o formato fica a sua escolha.
-
-_RF08 – Dashboard_
-
-Montar dashboard onde seja possível visualizar e analisar os dados do RF06.
-
-_RF09 – Chat_
-
-Montar tela para enviar mensagem e receber a resposta de acordo com a API do RF01.
-
-**IMPORTANTE: Lembrando que a não completude de todos os pontos, não necessariamente é fator reprovatório, seu esforço será avaliado.**
+> **Nota de infraestrutura:** Como o processamento do modelo de IA ocorre localmente via CPU em ambiente de desenvolvimento, o tempo de resposta inicial pode variar entre 15 e 25 segundos dependendo do hardware. Em ambiente de produção com suporte a GPU dedicadas, este tempo cai para cerca de 2 segundos.

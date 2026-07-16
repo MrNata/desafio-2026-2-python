@@ -1,21 +1,18 @@
-from sqlalchemy import create_engine
+import os
+from sqlalchemy import create_engine, URL
 from sqlalchemy.orm import sessionmaker, declarative_base
-import urllib.parse
+from dotenv import load_dotenv
 
-# Usuário exclusivo da aplicação e senha tratada
-USUARIO = "unoesc_app"
-SENHA = urllib.parse.quote_plus("Unoesc@2026")
-HOST = "localhost"
-PORTA = "3306"
-BANCO = "unoesc_db"
+load_dotenv()
 
-# string de conexão segura
-SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{USUARIO}:{SENHA}@{HOST}:{PORTA}/{BANCO}"
+SQLALCHEMY_DATABASE_URL = URL.create(
+    drivername="mysql+pymysql",
+    username=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASS"),
+    host=os.getenv("DB_HOST"),
+    database=os.getenv("DB_NAME")
+)
 
-# motor que vai gerenciar a conexão
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
-
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Base para criar as tabelas
 Base = declarative_base()

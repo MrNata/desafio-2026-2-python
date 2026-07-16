@@ -1,7 +1,10 @@
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+import time
+import app.ia as ia
 
 # arquivos locais
 import app.models as models
@@ -19,6 +22,14 @@ def get_db():
         yield db
     finally:
         db.close()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite qualquer origem testes locais
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ROTAS DE SEGURANÇA (RF07)
 
@@ -69,8 +80,71 @@ class PerguntaRequest(BaseModel):
     pergunta: str
 
 @app.post("/perguntar")
-async def perguntar(request: PerguntaRequest, usuario_logado: str = Depends(security.obter_usuario_atual)):
+async def perguntar(
+    request: PerguntaRequest, 
+    usuario_logado: str = Depends(security.obter_usuario_atual),
+    db: Session = Depends(get_db)
+):
+    # Inicia o cronômetro
+    inicio = time.time()
+    
+    # Manda a pergunta para o LangChain/Ollama
+    resposta_da_ia = ia.gerar_resposta(request.pergunta, db)
+    
+    # Para o cronômetro e calcula o tempo total
+    fim = time.time()
+    tempo_total = fim - inicio
+    
+    # Salva o registro completo na tabela de Histórico (RF05)
+    novo_log = models.HistoricoLog(
+        codigoAluno=request.codigoAluno,
+        pergunta=request.pergunta,
+        resposta=resposta_da_ia,
+        tempoProcessamento=tempo_total
+    )
+    db.add(novo_log)
+    db.commit()
+    
+    # Retorna resposta para o estudante
     return {
         "status": "sucesso",
-        "mensagem": f"Acesso liberado para {usuario_logado}! Recebi a pergunta: '{request.pergunta}' do aluno {request.codigoAluno}"
+        "aluno": request.codigoAluno,
+        "resposta": resposta_da_ia,
+        "tempo_segundos": round(tempo_total, 2)
+    }
+
+@app.get("/historico")
+async def consultar_historico(
+    skip: int = 0, 
+    limit: int = 10, 
+    usuario_logado: str = Depends(security.obter_usuario_atual),
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna o histórico de perguntas de forma paginada.
+    - skip: Quantos registros pular (OFFSET)
+    - limit: Quantos registros trazer (LIMIT)
+    """
+    
+    # Mais recentes primeiro)
+    registros = (
+        db.query(models.HistoricoLog)
+        .order_by(models.HistoricoLog.data.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    
+    # Conta o total de registros no banco
+    total = db.query(models.HistoricoLog).count()
+    
+    # Calcula qual é a página atual
+    pagina_atual = (skip // limit) + 1 if limit > 0 else 1
+    
+    return {
+        "status": "sucesso",
+        "total_registros": total,
+        "registros_retornados": len(registros),
+        "pagina_atual": pagina_atual,
+        "dados": registros
     }

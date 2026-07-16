@@ -1,26 +1,29 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+import os
+from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 
-# 1. Chave segredo
-SECRET_KEY = "chave_secreta_segura_projeto_unoesc" 
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30 # O crachá expira em 30 minutos
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# 2. Configurando o encoder de senhas (bcrypt)
+# 1. Configurando o encoder de senhas (bcrypt)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# 3. Função para verificar se a senha digitada bate com o Hash do banco
+# 2. Função para verificar se a senha digitada bate com o Hash do banco
 def verificar_senha(senha_pura, senha_hash):
     return pwd_context.verify(senha_pura, senha_hash)
 
-# 4. Função para transformar a senha pura em Hash antes de salvar no banco
+# 3. Função para transformar a senha pura em Hash antes de salvar no banco
 def gerar_hash_senha(senha):
     return pwd_context.hash(senha)
 
-# 5. Função para gerar Token JWT
+# 4. Função para gerar Token JWT
 def criar_token_acesso(dados: dict):
     dados_para_codificar = dados.copy()
     
@@ -34,7 +37,7 @@ def criar_token_acesso(dados: dict):
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-# 6. Função para validar o token
+# 5. Função para validar o token
 def obter_usuario_atual(token: str = Depends(oauth2_scheme)):
     try:
         # Tenta decodificar o token usando a nossa Chave Mestre

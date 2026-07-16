@@ -19,7 +19,7 @@ class HistoricoLog(Base):
     codigoAluno = Column(Integer, index=True)
     pergunta = Column(Text)
     resposta = Column(Text)
-    data = Column(DateTime, default=datetime.datetime.utcnow)
+    data = Column(DateTime, default=datetime.datetime.now)
     tempoProcessamento = Column(Float)
 
 # Tabela de Usuários para o JWT (RF07 Segurança)
