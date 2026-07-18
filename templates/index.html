@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <!-- Responsividade para dispositivos móveis -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Chat IA - Suporte</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!--TELA DE AUTENTICAÇÃO-->
+    <div id="auth-screen" class="container">
+
+        <h2>Bem-vindo</h2>
+
+        <div id="login-form">
+
+            <h3>Login</h3>
+
+            <input
+                type="text"
+                id="login-codigo"
+                placeholder="Código de Acesso (Ex: 839102)"
+            >
+
+            <!-- Senha do usuário -->
+            <input
+                type="password"
+                id="login-senha"
+                placeholder="Senha"
+            >
+
+            <!-- Chama função responsável pela autenticação -->
+            <button onclick="fazerLogin()">
+                Entrar
+            </button>
+
+            <!-- Alterna para a tela de cadastro -->
+            <p style="text-align:center; font-size:14px;">
+                <a href="#"
+                   onclick="alternarTela('register-form','login-form')">
+                    Não tem código? Cadastre-se
+                </a>
+            </p>
+
+        </div>
+
+        <!--CADASTRO-->
+        <div id="register-form" class="hidden">
+
+            <h3>Novo Cadastro</h3>
+
+            <!-- Nome completo do estudante -->
+            <input
+                type="text"
+                id="reg-nome"
+                placeholder="Nome Completo"
+            >
+
+            <!-- Nome que será utilizado durante a conversa -->
+            <input
+                type="text"
+                id="reg-apelido"
+                placeholder="Como quer ser chamado? (Apelido)"
+            >
+
+            <!-- E-mail do usuário -->
+            <input
+                type="email"
+                id="reg-email"
+                placeholder="E-mail"
+            >
+
+            <!-- Senha cadastrada -->
+            <input
+                type="password"
+                id="reg-senha"
+                placeholder="Crie uma Senha"
+            >
+
+            <!-- Gera o código único de acesso -->
+            <button onclick="fazerCadastro()">
+                Gerar Código de Acesso
+            </button>
+
+            <!-- Retorna para o login -->
+            <p style="text-align:center; font-size:14px;">
+                <a href="#"
+                   onclick="alternarTela('login-form','register-form')">
+                    Já tenho código
+                </a>
+            </p>
+
+        </div>
+
+    </div>
+
+    <!-- TELA PRINCIPAL DO CHAT -->
+    <div
+        id="chat-screen"
+        class="container hidden"
+        style="max-width:600px;"
+    >
+
+        <!-- Nome do chat -->
+        <h2 id="chat-title">
+            Chat IA
+        </h2>
+
+        <button
+            id="btn-menu-estatisticas"
+            onclick="carregarEstatisticas()"
+            style="padding:10px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer; margin-bottom: 15px; width: 100%;"
+        >
+            📊 Ver Relatório de perguntas
+        </button>
+
+        <!-- Área onde serão exibidas perguntas e respostas -->
+        <div
+            class="chat-box"
+            id="chat-box">
+        </div>
+
+        <!-- Campo de envio da pergunta -->
+        <div style="display:flex; gap:10px;">
+
+            <input
+                type="text"
+                id="pergunta-input"
+                placeholder="Digite sua pergunta aqui..."
+            >
+
+            <!-- Envia a pergunta para a IA -->
+            <button
+                onclick="enviarPergunta()"
+                style="width:100px;"
+            >
+                Enviar
+            </button>
+
+        </div>
+
+        <!-- Encerra a sessão do usuário -->
+        <button
+            onclick="sair()"
+            style="background-color:#dc3545; margin-top:15px;"
+        >
+            Sair
+        </button>
+
+    </div>
+
+    <!-- MODAL DE SUCESSO
+         Mostra o código que o usuário utilizará para fazer login. -->
+    <div id="sucesso-modal" class="modal-overlay hidden">
+
+        <div class="modal-content">
+
+            <h3>Cadastro Realizado!</h3>
+
+            <p>
+                Seu usuário foi criado com sucesso.
+            </p>
+
+            <!-- Código gerado -->
+            <div class="codigo-destaque">
+                <span id="modal-codigo-acesso"></span>
+            </div>
+
+            <p class="modal-aviso">
+                Guarde este número para fazer login.
+            </p>
+
+            <button onclick="fecharModalSucesso()">
+                Ir para o Login
+            </button>
+        </div>
+
+<div id="modal-relatorio" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 600px; width: 90%;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #333;">Relatório de Estatísticas</h3>
+                <button onclick="fecharRelatorio()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #999;">&times;</button>
+            </div>
+
+            <div style= "display:flex; gap:15px; text-align: center;">
+                <div style="background-color:#f8f9fa; padding:15px; border-radius:5px; flex:1; border: 1px solid #eaeaea;">
+                    <strong style="color: #555; font-size: 14px;">Total de Alunos:</strong>
+                    <p id="stat-alunos" style="font-size:26px; font-weight: bold; margin:10px 0 0 0; color:#007bff;">...</p>
+                </div>
+
+                <div style="background-color:#f8f9fa; padding:15px; border-radius:5px; flex:1; border: 1px solid #eaeaea;">
+                    <strong style="color: #555; font-size: 14px;">Perguntas:</strong>
+                    <p id="stat-perguntas" style="font-size:26px; font-weight: bold; margin:10px 0 0 0; color:#28a745;">...</p>
+                </div>
+
+                <div style="background-color:#f8f9fa; padding:15px; border-radius:5px; flex:1; border: 1px solid #eaeaea;">
+                    <strong style="color: #555; font-size: 14px;">Tempo Médio:</strong>
+                    <p id="stat-tempo" style="font-size:26px; font-weight: bold; margin:10px 0 0 0; color:#dc3545;">...</p>
+                </div>
+            </div>
+
+            <button onclick="carregarEstatisticas()" style="margin-top:20px; width: 100%; padding: 10px; background-color: #0056b3; color: white; border: none; border-radius: 5px; cursor:pointer;">
+                Atualizar Dados
+            </button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

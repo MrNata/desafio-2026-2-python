@@ -1,14 +1,17 @@
 # API Assistente Acadêmico - Desafio Unoesc
 
-Esta é uma API desenvolvida em Python (FastAPI) para atuar como assistente virtual acadêmico. O sistema utiliza a arquitetura RAG (Retrieval-Augmented Generation) com o modelo de linguagem Phi-3 executado localmente via Ollama, garantindo a segurança e privacidade dos dados institucionais.
+Esta é uma API desenvolvida em Python (FastAPI) para atuar como assistente virtual acadêmico, acompanhada de uma interface gráfica web completa. O sistema utiliza a arquitetura RAG (Retrieval-Augmented Generation) com o modelo de linguagem Phi-3 executado localmente via Ollama, garantindo a segurança e privacidade dos dados institucionais.
 
 ## Requisitos Atendidos
 
-* **RF01:** Endpoint `POST /perguntar` recebendo JSON com `codigoAluno` e `pergunta`.
+* **RF01:** Endpoint `POST /perguntar` recebendo JSON com `codigo_acesso` e `pergunta`.
 * **RF02 & RF03:** Respostas geradas estritamente com base nos dados cadastrados no banco de dados. A IA foi instruída a recusar perguntas fora do escopo acadêmico fornecido.
 * **RF05:** Registro de log de todas as interações na tabela `historico`, incluindo o tempo de processamento da IA.
 * **RF07:** Proteção de todos os endpoints de consulta via autenticação JWT (JSON Web Token). Armazenamento de senhas utilizando hash seguro (Bcrypt).
-* **Diferencial:** Processamento de IA 100% local (offline), eliminando custos e dependência de APIs externas de terceiros.
+* **Diferenciais Adicionais:** 
+  * Processamento de IA 100% local (offline), eliminando custos e dependência de APIs externas de terceiros.
+  * Endpoint adicional `GET /estatisticas` e Painel Web para visualização de métricas (total de alunos, perguntas respondidas e tempo médio de resposta).
+  * Interface Gráfica interativa (HTML/CSS/JS) pronta para uso.
 
 ## Tecnologias Utilizadas
 
@@ -17,6 +20,7 @@ Esta é uma API desenvolvida em Python (FastAPI) para atuar como assistente virt
 * **ORM:** SQLAlchemy
 * **Segurança:** PyJWT, Passlib (Bcrypt)
 * **Inteligência Artificial:** LangChain, Ollama (Modelo Phi-3)
+* **Front-end:** HTML5, CSS3, Vanilla JavaScript
 
 ---
 
